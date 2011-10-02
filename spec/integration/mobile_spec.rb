@@ -126,16 +126,16 @@ if $ENABLE_MOBILE
 
     it 'should show an example taxon details' do
       headers = {"User-Agent" => "iPhone"}
-      visit details_mobile_taxon_path(@taxon_concept.id)
-      current_path.should == details_mobile_taxon_path(@taxon_concept.id)
+      visit mobile_taxon_details_path(@taxon_concept.id)
+      current_path.should == mobile_taxon_details_path(@taxon_concept.id)
       body.should have_tag("h1", I18n.t("mobile.taxa.taxon_details"))
       body.should have_tag("h3", @taxon_concept.quick_scientific_name)
     end
 
     it 'should show an example taxon media gallery' do
       headers = {"User-Agent" => "iPhone"}
-      visit media_mobile_taxon_path(@taxon_concept.id)
-      current_path.should == media_mobile_taxon_path(@taxon_concept.id)
+      visit mobile_taxon_media_path(@taxon_concept.id)
+      current_path.should == mobile_taxon_media_path(@taxon_concept.id)
       body.should have_tag("h1", I18n.t("mobile.taxa.taxon_media"))
       body.should have_tag("h3", @taxon_concept.quick_scientific_name)
     end
