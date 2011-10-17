@@ -22,20 +22,20 @@ def rvm_install(*packages)
 end
 
 PACKAGES = {
-  :git    => ["git-core"],
-  :curl     => ["curl"],
-  :dselect  => ["dselect"],
-  :zlib   => ["zlib1g-dev"],
-  :readline => ["ncurses-dev", "libncurses5-dev", "libreadline-dev", "libreadline6", "libreadline6-dev"],
-  :mysql    => ["mysql-server", "mysql-client", "libmysqlclient-dev"],
+  :git        => ["git-core"],
+  :curl       => ["curl"],
+  :dselect    => ["dselect"],
+  :zlib       => ["zlib1g-dev"],
+  :readline   => ["ncurses-dev", "libncurses5-dev", "libreadline-dev", "libreadline6", "libreadline6-dev"],
+  :mysql      => ["mysql-server", "mysql-client", "libmysqlclient-dev"],
   :memcached  => ["memcached"],
-  :libxml2  => ["libxml2-dev", "libxml2", "libxslt-dev"],
+  :libxml2    => ["libxml2-dev", "libxml2", "libxslt-dev"],
 }
 
 RVM_PACKAGES = {
-  :openssl  => ["openssl"],
+  :openssl    => ["openssl"],
   :readline   => ["readline"],
-  :iconv    => ["iconv"]
+  :iconv      => ["iconv"]
 }
 
 # ========================
