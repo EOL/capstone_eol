@@ -4,6 +4,23 @@
 # Helpers
 # ========================
 
+#prompts user for imput with the specified message
+def input_prompt(message)
+  puts "" + message 
+  STDIN.gets.chomp
+end
+
+#sets up ssh if neccessaty and waits for user to link the ssh key to git hub
+def ssh_setup()
+  email = input_prompt("Please enter you github email")  
+  sh "ssh-keygen -t rsa -c #{email}"
+  puts "Add the following key you your github account"
+  sh "cat .ssh/id_rsa.pub"
+  #is below the correct git clone command???
+  #maybe loop if cant clone
+  #sh "git clone git@github.com:EncyclopediaOfLife/eol.git eol"
+end
+
 def is_installed?(package)
   sh "dpkg -l '#{package}' > /dev/null" do |ok, res|
     return ok
@@ -14,6 +31,20 @@ def do_install(packages)
   packages.each do |package|
     #sh "sudo apt-get install -y #{packages.join(' ')}" if !is_installed? package
     puts "Rake will install #{package}" if !is_installed? package
+  end
+end
+
+#gets all packages with sudo apt-get
+def sudo_apt_get(packages)
+  packages.each do |package|     
+    sh "sudo apt-get #{package}"    
+  end
+end
+
+#installs all packages with sudo apt-get install
+def sudo_apt_get_install(packages)
+  packages.each do |package|     
+    sh "sudo apt-get install #{package}"    
   end
 end
 
@@ -48,10 +79,10 @@ task :install => ["install:sysupdate", "install:all", "install:rvm", "install:ge
 namespace :install do
 
   desc "Bootstrap fresh box for installation"
-  task :sysupdate do
-    sh "sudo apt-get upgrade"
-    sh "sudo apt-get dist-upgrade"
-    doo_install(["build-essential"])
+  task :sysupdate do    
+    sudo_apt_get(["update", "dist-upgrade"])
+    sudo_apt_get_install(["openssh-client", "build-essential", "git-core"])
+    #ssh_setup #uncomment if we decide to do an interactive install    
   end
 
   PACKAGES.each do |package_name, libs|
@@ -87,6 +118,7 @@ namespace :install do
   desc "Install all gems"
   task :gems do
     sh "gem install bundler"
+    sh "gem install bundle"
     sh "bundler install"
   end
 

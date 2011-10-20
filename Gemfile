@@ -13,6 +13,7 @@ group :development, :test do
   gem 'optiflag'
 end
 
+gem 'rake', '0.8.5'
 gem 'mysql'
 gem 'json', '1.5.3'
 gem 'indifferent-variable-hash'
