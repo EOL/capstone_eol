@@ -4,6 +4,8 @@
 # Helpers
 # ========================
 
+DRY_RUN = true
+
 #prompts user for imput with the specified message
 def input_prompt(message)
   puts "" + message 
@@ -29,7 +31,7 @@ end
 
 def do_install(packages)
   packages.each do |package|
-    sh "sudo apt-get install -y #{packages.join(' ')}" if !is_installed? package
+    sh "sudo apt-get install -y #{packages.join(' ')} #{'--dry-run' if DRY_RUN}" if !is_installed? package
     #puts "Rake will install #{package}" if !is_installed? package
   end
 end
