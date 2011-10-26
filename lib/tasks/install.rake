@@ -29,8 +29,8 @@ end
 
 def do_install(packages)
   packages.each do |package|
-    #sh "sudo apt-get install -y #{packages.join(' ')}" if !is_installed? package
-    puts "Rake will install #{package}" if !is_installed? package
+    sh "sudo apt-get install -y #{packages.join(' ')}" if !is_installed? package
+    #puts "Rake will install #{package}" if !is_installed? package
   end
 end
 
@@ -61,6 +61,7 @@ PACKAGES = {
   :mysql      => ["mysql-server", "mysql-client", "libmysqlclient-dev"],
   :memcached  => ["memcached"],
   :libxml2    => ["libxml2-dev", "libxml2", "libxslt-dev"],
+  :ssh        => ["openssh-server", "openssh-client"],
 }
 
 RVM_PACKAGES = {
@@ -81,7 +82,7 @@ namespace :install do
   desc "Bootstrap fresh box for installation"
   task :sysupdate do    
     sudo_apt_get(["update", "dist-upgrade"])
-    sudo_apt_get_install(["openssh-client", "build-essential", "git-core"])
+    sudo_apt_get_install(["build-essential"])
     #ssh_setup #uncomment if we decide to do an interactive install    
   end
 
@@ -118,8 +119,7 @@ namespace :install do
   desc "Install all gems"
   task :gems do
     sh "gem install bundler"
-    sh "gem install bundle"
-    sh "bundler install"
+    sh "bundle install"
   end
 
 end
