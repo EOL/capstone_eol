@@ -110,7 +110,7 @@ namespace :install do
     RVM_PACKAGES.each do |package_name, libs|
       desc "Install RVM package #{package_name}"
       task package_name do
-        do_install(libs)
+        rvm_install(libs)
       end
     end
     
