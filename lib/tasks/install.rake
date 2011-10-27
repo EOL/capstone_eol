@@ -100,8 +100,10 @@ namespace :install do
 
   desc "Install RVM"
   task :rvm => [:curl] do
-    sh "bash < <(curl -s https://raw.github.com/wayneeseguin/rvm/master/binscripts/rvm-installer)"
+    puts "trying install"
+    sh "bash lib/tasks/rvm_installer"        
     sh ". ~/.bashrc"
+    sh ". ~/.bash_profile"
   end
 
   namespace :rvm do
