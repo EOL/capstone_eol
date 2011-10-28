@@ -1,10 +1,18 @@
 # These tasks can be used to prepare a fresh Ubuntu machine for EOL dev
 
+require 'eol_installer'
+
+PACKAGES = EOLInstallation::BASE_OS_PACKAGES
+begin
+  installer = EOLInstallation::get_installer()
+  installer.dry_run = true
+rescue UnknownOperatingSystemError => e
+  abort "Cannot determine your operating system, aborting rake install!"
+end
+
 # ========================
 # Helpers
 # ========================
-
-DRY_RUN = true
 
 #prompts user for imput with the specified message
 def input_prompt(message)
@@ -23,18 +31,6 @@ def ssh_setup()
   #sh "git clone git@github.com:EncyclopediaOfLife/eol.git eol"
 end
 
-def is_installed?(package)
-  sh "dpkg -l '#{package}' > /dev/null" do |ok, res|
-    return ok
-  end
-end
-
-def do_install(packages)
-  packages.each do |package|
-    sh "sudo apt-get install -y #{packages.join(' ')} #{'--dry-run' if DRY_RUN}" if !is_installed? package
-    #puts "Rake will install #{package}" if !is_installed? package
-  end
-end
 
 #gets all packages with sudo apt-get
 def sudo_apt_get(packages)
@@ -54,17 +50,7 @@ def rvm_install(*packages)
   sh "rvm install #{packages.join(' ')}"
 end
 
-PACKAGES = {
-  :git        => ["git-core"],
-  :curl       => ["curl"],
-  :dselect    => ["dselect"],
-  :zlib       => ["zlib1g-dev"],
-  :readline   => ["ncurses-dev", "libncurses5-dev", "libreadline-dev", "libreadline6", "libreadline6-dev"],
-  :mysql      => ["mysql-server", "mysql-client", "libmysqlclient-dev"],
-  :memcached  => ["memcached"],
-  :libxml2    => ["libxml2-dev", "libxml2", "libxslt-dev"],
-  :ssh        => ["openssh-server", "openssh-client"],
-}
+
 
 RVM_PACKAGES = {
   :openssl    => ["openssl"],
@@ -83,20 +69,18 @@ namespace :install do
 
   desc "Bootstrap fresh box for installation"
   task :sysupdate do    
-    sudo_apt_get(["update", "dist-upgrade"])
-    sudo_apt_get_install(["build-essential"])
-    #ssh_setup #uncomment if we decide to do an interactive install    
+    installer.do_sysupdate 
   end
 
-  PACKAGES.each do |package_name, libs|
+  PACKAGES.each do |package_name|
     desc "Install #{package_name}"
     task package_name do
-      do_install(libs)
+      installer.send("install_#{package_name}")
     end
   end
 
   desc "install all system packages"
-  task :all => PACKAGES.keys 
+  task :all => PACKAGES
 
   desc "Install RVM"
   task :rvm => [:curl] do
