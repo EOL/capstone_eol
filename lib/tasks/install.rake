@@ -20,18 +20,6 @@ def input_prompt(message)
   STDIN.gets.chomp
 end
 
-#sets up ssh if neccessaty and waits for user to link the ssh key to git hub
-def ssh_setup()
-  email = input_prompt("Please enter you github email")  
-  sh "ssh-keygen -t rsa -c #{email}"
-  puts "Add the following key you your github account"
-  sh "cat .ssh/id_rsa.pub"
-  #is below the correct git clone command???
-  #maybe loop if cant clone
-  #sh "git clone git@github.com:EncyclopediaOfLife/eol.git eol"
-end
-
-
 #gets all packages with sudo apt-get
 def sudo_apt_get(packages)
   packages.each do |package|     
@@ -63,7 +51,7 @@ RVM_PACKAGES = {
 # ========================
 
 desc "Prepare a fresh Ubuntu machine for development"
-task :install => ["install:sysupdate", "install:all", "install:rvm", "install:gems"]
+task :install => ["install:sysupdate", "install:all", "install:rvm", "install:gems", "install:db_setup"]
 
 namespace :install do
 
@@ -90,6 +78,11 @@ namespace :install do
     sh ". ~/.bash_profile"
   end
 
+  desc "database configuraetion"
+  task :db_setup do       
+    installer.db_setup	
+  end
+
   namespace :rvm do
 
     desc "Install all RVM packages"
@@ -106,8 +99,11 @@ namespace :install do
 
   desc "Install all gems"
   task :gems do
-    sh "gem install bundler"
-    sh "bundle install"
+    puts "installing gems"
+    gem_installer = EOLInstallation::GemInstaller.new(installer.dry_run)    
+    
+    gem_installer.install_gems(["bundler"])
+    gem_installer.run_bundler()
   end
 
 end

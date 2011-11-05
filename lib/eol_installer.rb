@@ -4,8 +4,25 @@ module EOLInstallation
     # TODO
   end
 
-  class GemInstaller
-    # TODO
+  class GemInstaller    
+    
+    def initialize(dry_run=true)
+      @dry_run = dry_run
+    end
+
+    def install_gems(gems)    
+      gems.each do |gem|
+        sh "gem install #{gem}"
+      end   
+    end
+
+    def run_bundler()  
+      puts "running bundler"
+      if not @dry_run    
+        sh "bundle install"
+      end
+    end
+
   end
 
   # all OS installer must support the base EOL dependencies
@@ -31,6 +48,17 @@ module EOLInstallation
     def do_sysupdate
       raise NotImplementedError.new('Implement me in a subclass!')
     end
+  
+    #set up databse base
+    def db_setup
+      puts "setting up the database..."
+      #based on README.rdoc
+      if not File.exists?("config/database.yml")
+        FileUtils.copy("config/database.sample.yml", "config/database.yml")        
+      end           
+
+    end
+    
   end
 
   # Installer for Ubuntu and perhaps Debian based systems
@@ -69,9 +97,39 @@ module EOLInstallation
       # extend this method if there's Ubuntu specific package that needs to be installed
     end
 
-    def do_sysupdate
+    def db_setup()
+      super.db_setup()
 
+      #keep in sub class until we get this working without using shell
+      if not @dry_run
+        #call rake task required to build the db / set up scenario / solr 
+        Rake::Task["db:create:all"].invoke()
+        Rake::Task["db:migrate"].invoke() 
+        sh "rake db:migrate RAILS_ENV=test" #figure out how to pass params properly
+        sh "rake db:migrate RAILS_ENV=test_master"
+        Rake::Task["solr:start"].invoke()
+        Rake::Task["truncate"].invoke() 
+        sh "rake scenarios:load NAME=bootstrap,demo"
+        sh "rake solr:build RAILS_ENV=test"
+        Rake::Task["solr:rebuild_site_search"].invoke() 
+        Rake::Task["solr:rebuild_collection_items"].invoke()  
+           
+      #attempt at using proper params but doesnt work
+      #db_args = Rake::TaskArguments::new(["NAME"], ["bootstrap,demo"])
+      #puts db_args.to_hash()
+      #Rake::Task["scenarios:load"].invoke(db_args.to_hash())
+      end 
+     
     end
+
+    def do_sysupdate
+      if not @dry_run
+        sh "sudo apt-get update"
+        sh "sudo apt-get dist-upgrade"
+      else
+        puts "No sysupdate in dry run."     
+      end
+    end    
 
     private
 
@@ -87,7 +145,7 @@ module EOLInstallation
       packages.each do |package|
         sh "sudo #{@manager} install -y #{packages.join(' ')} #{'--dry-run' if @dry_run}" if !is_installed? package
       end
-    end
+    end    
     
   end
 
@@ -99,11 +157,22 @@ module EOLInstallation
   # Main Factory Pattern (static method)
   def self.get_installer(explicit=nil)
     # either user specifies explicit OS or we try to guess
-    uname = explicit || %x[uname -a] 
+    os_type = RUBY_PLATFORM  
 
-    if uname.include? "Ubuntu"
-      puts "Detected OS: Ubuntu"
-      return UbuntuInstaller.new()
+    if os_type.include? "linux" or os_type.include? "cygwin"
+      uname = explicit || %x[uname -a]
+      if uname.include? "Ubuntu"
+        puts "Detected OS: Ubuntu"
+        return UbuntuInstaller.new()
+      end
+    elsif os_type.include? "mac" or os_type.include? "darwin"
+      puts "Mac OS detected"
+    elsif os_type.include? "bsd"
+      puts "BSD OS detected"
+    elsif os_type.include? "mswin" or os_type.include? "win" or os_type.include? "mingw"
+      puts "nice OS choice!!"
+    elsif os_type.include? "solaris" or os_type.include? "sunos"
+      puts "Solaris OS detected"
     else
       raise UnknownOperatingSystemError.new("Cannot determine your Operating System, sorry!")
     end
