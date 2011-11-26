@@ -10,8 +10,8 @@ module EOLInstallation
       @dry_run = dry_run
     end
 
-    def install_gems(gems)    
-      gems.each do |gem|
+    def install_gems(gems) 
+      gems.each do |gem|         
         sh "gem install #{gem}"
       end   
     end
@@ -21,7 +21,7 @@ module EOLInstallation
       if not @dry_run    
         sh "bundle install"
       end
-    end
+    end   
 
   end
 
@@ -53,9 +53,28 @@ module EOLInstallation
     def db_setup
       puts "setting up the database..."
       #based on README.rdoc
-      if not File.exists?("config/database.yml")
+      if not File.exists?("config/database.yml") and not @dry_run
         FileUtils.copy("config/database.sample.yml", "config/database.yml")        
-      end           
+      end
+      
+      if not @dry_run
+        #call rake task required to build the db / set up scenario / solr 
+        Rake::Task["db:create:all"].invoke()
+        Rake::Task["db:migrate"].invoke() 
+        sh "rake db:migrate RAILS_ENV=test" #figure out how to pass params properly
+        sh "rake db:migrate RAILS_ENV=test_master"
+        Rake::Task["solr:start"].invoke()
+        Rake::Task["truncate"].invoke() 
+        sh "rake scenarios:load NAME=bootstrap,demo"
+        sh "rake solr:build RAILS_ENV=test"
+        Rake::Task["solr:rebuild_site_search"].invoke() 
+        Rake::Task["solr:rebuild_collection_items"].invoke()  
+           
+      #attempt at using proper params but doesnt work
+      #db_args = Rake::TaskArguments::new(["NAME"], ["bootstrap,demo"])
+      #puts db_args.to_hash()
+      #Rake::Task["scenarios:load"].invoke(db_args.to_hash())
+      end            
 
     end
     
@@ -95,32 +114,7 @@ module EOLInstallation
     def install_all()
       super.install_all()
       # extend this method if there's Ubuntu specific package that needs to be installed
-    end
-
-    def db_setup()
-      super.db_setup()
-
-      #keep in sub class until we get this working without using shell
-      if not @dry_run
-        #call rake task required to build the db / set up scenario / solr 
-        Rake::Task["db:create:all"].invoke()
-        Rake::Task["db:migrate"].invoke() 
-        sh "rake db:migrate RAILS_ENV=test" #figure out how to pass params properly
-        sh "rake db:migrate RAILS_ENV=test_master"
-        Rake::Task["solr:start"].invoke()
-        Rake::Task["truncate"].invoke() 
-        sh "rake scenarios:load NAME=bootstrap,demo"
-        sh "rake solr:build RAILS_ENV=test"
-        Rake::Task["solr:rebuild_site_search"].invoke() 
-        Rake::Task["solr:rebuild_collection_items"].invoke()  
-           
-      #attempt at using proper params but doesnt work
-      #db_args = Rake::TaskArguments::new(["NAME"], ["bootstrap,demo"])
-      #puts db_args.to_hash()
-      #Rake::Task["scenarios:load"].invoke(db_args.to_hash())
-      end 
-     
-    end
+    end    
 
     def do_sysupdate
       if not @dry_run

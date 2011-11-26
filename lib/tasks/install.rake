@@ -53,6 +53,9 @@ RVM_PACKAGES = {
 desc "Prepare a fresh Ubuntu machine for development"
 task :install => ["install:sysupdate", "install:all", "install:rvm", "install:gems", "install:db_setup"]
 
+desc "Nuke RVM"
+task :uninstall => ["uninstall:all"]
+
 namespace :install do
 
   desc "Bootstrap fresh box for installation"
@@ -72,10 +75,10 @@ namespace :install do
 
   desc "Install RVM"
   task :rvm => [:curl] do
-    puts "trying install"
-    sh "bash lib/tasks/rvm_installer"        
-    sh ". ~/.bashrc"
-    sh ". ~/.bash_profile"
+    puts "installing RVM"
+    if not installer.dry_run
+      sh "bash lib/tasks/rvm_installer"
+    end    
   end
 
   desc "database configuraetion"
@@ -106,4 +109,17 @@ namespace :install do
     gem_installer.run_bundler()
   end
 
-end
+end #end install namespace
+
+namespace :uninstall do
+
+  task :all do
+    puts "Removing RVM"    
+    if not installer.dry_run
+      sh "rvm uninstall all"      
+    end  
+    
+  end
+
+end #end uninstall namespace
+
